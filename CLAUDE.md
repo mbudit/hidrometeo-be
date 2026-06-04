@@ -11,7 +11,7 @@ HidroMeteo Backend is a **NestJS monorepo** for hydrometeorological data acquisi
 - **Module System**: `nodenext` (requires `.js` extensions in relative imports)
 - **Database**: TimescaleDB (PostgreSQL 16 with time-series extensions)
 - **Message Broker**: EMQX (MQTT)
-- **Auth**: Passport + JWT
+- **Auth**: Passport + JWT (bcrypt, class-validator, class-transformer)
 - **ORM**: TypeORM
 - **Logging**: Winston (via nest-winston)
 - **Monitoring**: Prometheus + Grafana
@@ -129,6 +129,101 @@ libs/<name>/
 │   ├── <name>.module.ts     # NestJS module (providers + exports)
 │   └── <name>.service.ts    # Injectable service
 └── tsconfig.lib.json        # Extends root tsconfig.json
+```
+
+## Auth & Users Libraries (Implemented)
+
+### `@app/users` — User Entity & Service
+
+```
+libs/users/src/
+├── index.ts                 # Barrel export
+├── user-role.enum.ts        # UserRole enum
+├── user.entity.ts           # TypeORM entity
+├── users.module.ts          # Registers User entity with TypeORM
+└── users.service.ts         # CRUD + refresh token management
+```
+
+**User Entity** (`users` table):
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `uuid` | PK, auto-generated |
+| `email` | `varchar` | unique |
+| `password_hash` | `varchar` | bcrypt-hashed |
+| `name` | `varchar` | — |
+| `role` | `enum` | `superadmin`, `admin`, `operator`, `viewer` (default: `viewer`) |
+| `software_access` | `simple-array` | e.g. `['APMS','SAMS']` |
+| `refresh_token_hash` | `varchar`, nullable | bcrypt-hashed refresh token (single session per user) |
+| `is_active` | `boolean` | default `true` |
+| `created_at` | `timestamptz` | auto |
+| `updated_at` | `timestamptz` | auto |
+
+**UsersService methods**: `findByEmail()`, `findById()`, `updateRefreshToken()`, `create()` (hashes password with bcrypt)
+
+### `@app/auth` — Authentication & Authorization
+
+```
+libs/auth/src/
+├── index.ts                           # Barrel export (all public API)
+├── auth.module.ts                     # Wires Passport, JWT, UsersModule
+├── auth.service.ts                    # Login, refresh, logout, token generation
+├── auth.controller.ts                 # POST /auth/login, POST /auth/refresh
+├── dto/
+│   ├── login.dto.ts                   # { email, password } with class-validator
+│   └── refresh-token.dto.ts           # { refresh_token }
+├── interfaces/
+│   └── jwt-payload.interface.ts       # { sub, email, role, software_access }
+├── strategies/
+│   └── jwt.strategy.ts                # Passport JWT strategy (Bearer token)
+├── guards/
+│   ├── jwt-auth.guard.ts              # AuthGuard('jwt') wrapper
+│   ├── roles.guard.ts                 # Checks @Roles() metadata vs JWT role
+│   └── software-access.guard.ts       # Checks @SoftwareAccess() vs JWT; superadmin bypasses
+└── decorators/
+    ├── current-user.decorator.ts      # @CurrentUser() → JwtPayload from request
+    ├── roles.decorator.ts             # @Roles(UserRole.ADMIN, ...)
+    └── software-access.decorator.ts   # @SoftwareAccess('APMS')
+```
+
+**Auth Endpoints** (auto-registered when `AuthModule` is imported):
+- `POST /auth/login` — validates credentials, returns `{ access_token, refresh_token }`
+- `POST /auth/refresh` — rotates refresh token (reuse detection), returns new token pair
+
+**JWT Payload**: `{ sub: userId, email, role, software_access }`
+- Access token signed with `JWT_SECRET`, expires per `JWT_EXPIRES_IN`
+- Refresh token signed with `JWT_REFRESH_SECRET`, expires per `JWT_REFRESH_EXPIRES_IN`
+
+**Guards** (stack order: `JwtAuthGuard` → `RolesGuard` → `SoftwareAccessGuard`):
+- `JwtAuthGuard` — validates Bearer token, attaches `JwtPayload` to `request.user`
+- `RolesGuard` — reads `@Roles(...)` decorator, rejects if user role not in list
+- `SoftwareAccessGuard` — reads `@SoftwareAccess('APMS')` decorator, rejects if user's `software_access` doesn't include it. **Superadmin bypasses this guard.**
+
+**Usage in an app**:
+```typescript
+// apps/apms/src/apms.module.ts
+import { AuthModule } from '@app/auth';
+
+@Module({
+  imports: [ConfigModule.forRoot(), DatabaseModule, AuthModule],
+})
+export class ApmsModule {}
+
+// apps/apms/src/stations.controller.ts
+import { JwtAuthGuard, RolesGuard, SoftwareAccessGuard,
+         Roles, SoftwareAccess, CurrentUser, JwtPayload } from '@app/auth';
+import { UserRole } from '@app/users';
+
+@Controller('stations')
+@SoftwareAccess('APMS')
+@UseGuards(JwtAuthGuard, RolesGuard, SoftwareAccessGuard)
+export class StationsController {
+  @Get()
+  @Roles(UserRole.ADMIN, UserRole.OPERATOR)
+  findAll(@CurrentUser() user: JwtPayload) {
+    // user.sub, user.email, user.role, user.software_access
+  }
+}
 ```
 
 ## Infrastructure (Docker Compose)
