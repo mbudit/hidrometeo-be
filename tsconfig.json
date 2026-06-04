@@ -16,10 +16,24 @@
     "baseUrl": "./",
     "incremental": true,
     "skipLibCheck": true,
-    "strictNullChecks": true,
+    "strict": true,
     "forceConsistentCasingInFileNames": true,
-    "noImplicitAny": true,
-    "strictBindCallApply": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "paths": {
+      "@app/auth": ["libs/auth/src"],
+      "@app/auth/*": ["libs/auth/src/*"],
+      "@app/users": ["libs/users/src"],
+      "@app/users/*": ["libs/users/src/*"],
+      "@app/database": ["libs/database/src"],
+      "@app/database/*": ["libs/database/src/*"],
+      "@app/mqtt": ["libs/mqtt/src"],
+      "@app/mqtt/*": ["libs/mqtt/src/*"],
+      "@app/gateway": ["libs/gateway/src"],
+      "@app/gateway/*": ["libs/gateway/src/*"],
+      "@app/logger": ["libs/logger/src"],
+      "@app/logger/*": ["libs/logger/src/*"],
+      "@app/config": ["libs/config/src"],
+      "@app/config/*": ["libs/config/src/*"]
+    }
   }
 }

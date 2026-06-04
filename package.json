@@ -1,18 +1,34 @@
 {
   "name": "hidrometeo-be",
   "version": "0.0.1",
-  "description": "",
+  "description": "HidroMeteo Backend Monorepo",
   "author": "",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build",
-    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "format": "prettier --write \"apps/**/*.ts\" \"libs/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/main",
-    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "start:prod": "node dist/apps/aadts/main",
+    "start:dev:aadts": "nest start aadts --watch",
+    "start:dev:apms": "nest start apms --watch",
+    "start:dev:sams": "nest start sams --watch",
+    "start:dev:mvms": "nest start mvms --watch",
+    "start:dev:adsbmas": "nest start adsbmas --watch",
+    "start:dev:wsdas": "nest start wsdas --watch",
+    "start:dev:vims": "nest start vims --watch",
+    "start:dev:mdps": "nest start mdps --watch",
+    "build:aadts": "nest build aadts",
+    "build:apms": "nest build apms",
+    "build:sams": "nest build sams",
+    "build:mvms": "nest build mvms",
+    "build:adsbmas": "nest build adsbmas",
+    "build:wsdas": "nest build wsdas",
+    "build:vims": "nest build vims",
+    "build:mdps": "nest build mdps",
+    "lint": "eslint \"{apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
@@ -21,10 +37,22 @@
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
+    "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.1",
+    "@nestjs/jwt": "^11.0.0",
+    "@nestjs/microservices": "^11.0.1",
+    "@nestjs/passport": "^11.0.0",
     "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/typeorm": "^11.0.0",
+    "mqtt": "^5.0.0",
+    "nest-winston": "^1.10.2",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1",
+    "pg": "^8.13.0",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "typeorm": "^0.3.20",
+    "winston": "^3.17.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
@@ -35,6 +63,7 @@
     "@types/express": "^5.0.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.0.0",
+    "@types/passport-jwt": "^4.0.1",
     "@types/supertest": "^7.0.0",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",
@@ -57,7 +86,7 @@
       "json",
       "ts"
     ],
-    "rootDir": "src",
+    "rootDir": ".",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
@@ -65,7 +94,20 @@
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],
-    "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "coverageDirectory": "./coverage",
+    "testEnvironment": "node",
+    "roots": [
+      "<rootDir>/apps/",
+      "<rootDir>/libs/"
+    ],
+    "moduleNameMapper": {
+      "^@app/auth(|/.*)$": "<rootDir>/libs/auth/src/$1",
+      "^@app/users(|/.*)$": "<rootDir>/libs/users/src/$1",
+      "^@app/database(|/.*)$": "<rootDir>/libs/database/src/$1",
+      "^@app/mqtt(|/.*)$": "<rootDir>/libs/mqtt/src/$1",
+      "^@app/gateway(|/.*)$": "<rootDir>/libs/gateway/src/$1",
+      "^@app/logger(|/.*)$": "<rootDir>/libs/logger/src/$1",
+      "^@app/config(|/.*)$": "<rootDir>/libs/config/src/$1"
+    }
   }
 }

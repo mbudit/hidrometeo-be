@@ -1,8 +1,148 @@
 {
   "$schema": "https://json.schemastore.org/nest-cli",
   "collection": "@nestjs/schematics",
-  "sourceRoot": "src",
+  "monorepo": true,
+  "root": "apps/aadts",
   "compilerOptions": {
+    "webpack": false,
+    "tsConfigPath": "apps/aadts/tsconfig.app.json",
     "deleteOutDir": true
+  },
+  "projects": {
+    "aadts": {
+      "type": "application",
+      "root": "apps/aadts",
+      "entryFile": "main",
+      "sourceRoot": "apps/aadts/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/aadts/tsconfig.app.json"
+      }
+    },
+    "apms": {
+      "type": "application",
+      "root": "apps/apms",
+      "entryFile": "main",
+      "sourceRoot": "apps/apms/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/apms/tsconfig.app.json"
+      }
+    },
+    "sams": {
+      "type": "application",
+      "root": "apps/sams",
+      "entryFile": "main",
+      "sourceRoot": "apps/sams/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/sams/tsconfig.app.json"
+      }
+    },
+    "mvms": {
+      "type": "application",
+      "root": "apps/mvms",
+      "entryFile": "main",
+      "sourceRoot": "apps/mvms/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/mvms/tsconfig.app.json"
+      }
+    },
+    "adsbmas": {
+      "type": "application",
+      "root": "apps/adsbmas",
+      "entryFile": "main",
+      "sourceRoot": "apps/adsbmas/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/adsbmas/tsconfig.app.json"
+      }
+    },
+    "wsdas": {
+      "type": "application",
+      "root": "apps/wsdas",
+      "entryFile": "main",
+      "sourceRoot": "apps/wsdas/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/wsdas/tsconfig.app.json"
+      }
+    },
+    "vims": {
+      "type": "application",
+      "root": "apps/vims",
+      "entryFile": "main",
+      "sourceRoot": "apps/vims/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/vims/tsconfig.app.json"
+      }
+    },
+    "mdps": {
+      "type": "application",
+      "root": "apps/mdps",
+      "entryFile": "main",
+      "sourceRoot": "apps/mdps/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/mdps/tsconfig.app.json"
+      }
+    },
+    "auth": {
+      "type": "library",
+      "root": "libs/auth",
+      "entryFile": "index",
+      "sourceRoot": "libs/auth/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/auth/tsconfig.lib.json"
+      }
+    },
+    "users": {
+      "type": "library",
+      "root": "libs/users",
+      "entryFile": "index",
+      "sourceRoot": "libs/users/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/users/tsconfig.lib.json"
+      }
+    },
+    "database": {
+      "type": "library",
+      "root": "libs/database",
+      "entryFile": "index",
+      "sourceRoot": "libs/database/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/database/tsconfig.lib.json"
+      }
+    },
+    "mqtt": {
+      "type": "library",
+      "root": "libs/mqtt",
+      "entryFile": "index",
+      "sourceRoot": "libs/mqtt/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/mqtt/tsconfig.lib.json"
+      }
+    },
+    "gateway": {
+      "type": "library",
+      "root": "libs/gateway",
+      "entryFile": "index",
+      "sourceRoot": "libs/gateway/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/gateway/tsconfig.lib.json"
+      }
+    },
+    "logger": {
+      "type": "library",
+      "root": "libs/logger",
+      "entryFile": "index",
+      "sourceRoot": "libs/logger/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/logger/tsconfig.lib.json"
+      }
+    },
+    "config": {
+      "type": "library",
+      "root": "libs/config",
+      "entryFile": "index",
+      "sourceRoot": "libs/config/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/config/tsconfig.lib.json"
+      }
+    }
   }
 }
