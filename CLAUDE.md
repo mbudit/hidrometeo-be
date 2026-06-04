@@ -71,6 +71,10 @@ npm run test
 
 # Start infrastructure
 docker compose up -d
+
+# Database Migrations
+npm run migration:run    # Compile database library and run pending migrations
+npm run migration:revert # Revert the last applied migration
 ```
 
 ## Code Conventions
@@ -226,12 +230,37 @@ export class StationsController {
 }
 ```
 
+### `@app/database` — TypeORM + TimescaleDB
+
+```
+libs/database/src/
+├── index.ts                 # Barrel export (module, datasource, entities)
+├── database.module.ts       # Configures global TypeOrmModule.forRootAsync
+├── database.service.ts      # Skeletal DatabaseService
+├── data-source.ts           # TypeORM CLI DataSource configuration
+├── entities/                # TypeORM entity definitions
+│   ├── index.ts             # Barrel export for all entities
+│   ├── station.entity.ts
+│   ├── sensor-reading.entity.ts (hypertable)
+│   ├── sensor-alert.entity.ts
+│   ├── sync-queue.entity.ts
+│   ├── camera.entity.ts
+│   ├── camera-snapshot.entity.ts
+│   ├── aircraft-track.entity.ts (hypertable)
+│   ├── geofence.entity.ts
+│   ├── geofence-event.entity.ts
+│   ├── device-node.entity.ts
+│   └── alert-rule.entity.ts
+└── migrations/              # Database migrations
+    └── 1780587140000-InitialSchema.ts
+```
+
 ## Infrastructure (Docker Compose)
 
 | Service       | Image                              | Ports                                      |
 |---------------|------------------------------------|--------------------------------------------|
 | TimescaleDB   | `timescale/timescaledb:latest-pg16`| 5432                                       |
-| EMQX          | `emqx/emqx`                       | 1883, 8083, 8084, 8883, 18083 (dashboard)  |
+| EMQX          | `emqx/emqx`                        | 1883, 8083, 8084, 8883, 18083 (dashboard)  |
 | Prometheus    | `prom/prometheus`                  | 9090                                       |
 | Grafana       | `grafana/grafana`                  | 3000                                       |
 | Nginx         | `nginx:alpine`                     | 80, 443                                    |

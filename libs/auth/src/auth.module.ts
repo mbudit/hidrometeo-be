@@ -27,7 +27,13 @@ import { SoftwareAccessGuard } from './guards/software-access.guard.js';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, JwtAuthGuard, RolesGuard, SoftwareAccessGuard],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    JwtAuthGuard,
+    RolesGuard,
+    SoftwareAccessGuard,
+  ],
   exports: [AuthService, JwtAuthGuard, RolesGuard, SoftwareAccessGuard],
 })
 export class AuthModule {}

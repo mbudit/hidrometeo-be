@@ -35,13 +35,21 @@ export class AuthService {
       throw new ForbiddenException('Account is deactivated');
     }
 
-    const passwordValid = await bcrypt.compare(dto.password, user.password_hash);
+    const passwordValid = await bcrypt.compare(
+      dto.password,
+      user.password_hash,
+    );
 
     if (!passwordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const tokens = await this.generateTokens(user.id, user.email, user.role, user.software_access);
+    const tokens = await this.generateTokens(
+      user.id,
+      user.email,
+      user.role,
+      user.software_access,
+    );
     const hash = await this.hashData(tokens.refresh_token);
     await this.usersService.updateRefreshToken(user.id, hash);
 
@@ -81,7 +89,12 @@ export class AuthService {
     }
 
     // Rotate: issue new pair and store new refresh hash
-    const tokens = await this.generateTokens(user.id, user.email, user.role, user.software_access);
+    const tokens = await this.generateTokens(
+      user.id,
+      user.email,
+      user.role,
+      user.software_access,
+    );
     const hash = await this.hashData(tokens.refresh_token);
     await this.usersService.updateRefreshToken(user.id, hash);
 

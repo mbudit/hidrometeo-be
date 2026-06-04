@@ -36,10 +36,7 @@ export class SoftwareAccessGuard implements CanActivate {
       return true;
     }
 
-    if (
-      !user.software_access ||
-      !user.software_access.includes(softwareId)
-    ) {
+    if (!user.software_access || !user.software_access.includes(softwareId)) {
       throw new ForbiddenException(
         `User does not have access to software '${softwareId}'`,
       );
