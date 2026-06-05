@@ -1,0 +1,3 @@
+[submodule "adsb_receiver"]
+	path = adsb_receiver
+	url = https://github.com/mbudit/adsb-receiver.git
