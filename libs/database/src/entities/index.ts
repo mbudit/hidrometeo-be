@@ -4,6 +4,7 @@ export * from './sensor-alert.entity.js';
 export * from './sync-queue.entity.js';
 export * from './camera.entity.js';
 export * from './camera-snapshot.entity.js';
+export * from './aircraft.entity.js';
 export * from './aircraft-track.entity.js';
 export * from './geofence.entity.js';
 export * from './geofence-event.entity.js';
