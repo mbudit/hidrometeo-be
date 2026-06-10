@@ -246,14 +246,58 @@ libs/database/src/
 │   ├── sync-queue.entity.ts
 │   ├── camera.entity.ts
 │   ├── camera-snapshot.entity.ts
+│   ├── aircraft.entity.ts
 │   ├── aircraft-track.entity.ts (hypertable)
 │   ├── geofence.entity.ts
 │   ├── geofence-event.entity.ts
 │   ├── device-node.entity.ts
 │   └── alert-rule.entity.ts
 └── migrations/              # Database migrations
-    └── 1780587140000-InitialSchema.ts
+    ├── 1780587140000-InitialSchema.ts
+    └── 1781074719000-OptimizeADSB.ts
 ```
+
+### ADSBMAS Microservice (`apps/adsbmas`)
+
+The ADSBMAS microservice manages real-time ADS-B aircraft data acquisition, tracking, geofence analysis, and web telemetry broadcasting.
+
+#### Module Architecture & Data Flows
+
+```
+  [PyQt Receiver App] 
+          │ (TCP port 30105, SBS-1 format)
+          ▼
+   AdsbIngestionModule (SBS-1 Parser)
+          │ (Forward state)
+          ▼
+    TrackingModule ──(Geofence checks)──► GeofenceModule (Ray-casting point-in-polygon)
+          │                                      │
+          ├─► WebSocket Gateway (Port 3005)      ├─► WebSocket Gateway (Alerts)
+          │   (/ws/aircraft Socket.IO namespace) │
+          ▼                                      ▼
+    TimescaleDB (Batch coordinate inserts)  postgres.geofence_events (Crossovers)
+```
+
+#### Key Functional Components
+* **`AdsbIngestionModule`**: Spawns a TCP socket server on port `30105` that parses incoming SBS-1 transponder telemetry lines, extracts aircraft details, and routes them to the tracker.
+* **`TrackingModule`**: Maintains an in-memory active aircraft cache, calculates heading and velocity dynamically (using Haversine/Bearing equations), evicts stale targets (idle > 60s), and flushes batches of flight coordinates to TimescaleDB every 5 seconds.
+* **`GeofenceModule`**: Caches geofence definitions, implements a fast point-in-polygon ray-casting algorithm to test whether an aircraft is inside each geofence on every coordinate change, writes enter/exit crossovers to the `geofence_events` table, and broadcasts alerts.
+* **`PlaybackModule`**: Performs historical queries against TimescaleDB coordinates filtered by `icao24` and time boundaries.
+* **`GatewayModule`**: Hosts the Socket.IO gateway on port `3005` at the `/ws/aircraft` namespace, pushing real-time position reports (`aircraft-update`) and crossover events (`geofence-alert`).
+
+#### REST API Routes
+
+| Method | Path | Description | Access |
+|---|---|---|---|
+| `POST` | `/auth/login` | User login (returns access & refresh token pairs) | Public |
+| `GET` | `/aircraft/live` | Retrieves currently active aircraft states | Operator, Admin |
+| `GET` | `/aircraft/:icao24` | Retrieves specific metadata and latest coordinates | Operator, Admin |
+| `GET` | `/aircraft/:icao24/history` | Retrieves historical tracking coordinates for playback | Operator, Admin |
+| `GET` | `/geofences` | Retrieves active geofences | Operator, Admin |
+| `POST` | `/geofences` | Creates a new geofence zone (stores GeoJSON polygon) | Admin |
+| `GET` | `/geofences/events` | Retrieves logs of geofence crossing events | Operator, Admin |
+
+---
 
 ## Infrastructure (Docker Compose)
 
