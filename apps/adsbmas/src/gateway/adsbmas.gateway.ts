@@ -33,4 +33,10 @@ export class AdsbmasGateway implements OnGatewayConnection, OnGatewayDisconnect 
       this.server.emit('geofence-alert', alert);
     }
   }
+
+  broadcastEviction(icao24: string) {
+    if (this.server) {
+      this.server.emit('aircraft-evicted', icao24);
+    }
+  }
 }

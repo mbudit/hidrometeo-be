@@ -205,6 +205,7 @@ export class TrackingService implements OnModuleInit, OnModuleDestroy {
     for (const [icao, state] of this.activeAircraft.entries()) {
       if (now - state.lastSeen > staleLimitMs) {
         this.activeAircraft.delete(icao);
+        this.gateway.broadcastEviction(icao);
         console.log(`GC: Evicted stale aircraft ${icao} from live tracking cache.`);
       }
     }
