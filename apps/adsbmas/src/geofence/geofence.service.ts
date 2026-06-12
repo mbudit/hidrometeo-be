@@ -42,7 +42,12 @@ export class GeofenceService implements OnModuleInit {
   }
 
   async getAllGeofences(): Promise<Geofence[]> {
-    return this.geofenceRepo.find();
+    return this.geofenceRepo.find({ where: { is_active: true } });
+  }
+
+  async deleteGeofence(id: string): Promise<void> {
+    await this.geofenceRepo.update(id, { is_active: false });
+    await this.loadGeofences(); // Refresh cache
   }
 
   async getEvents(): Promise<GeofenceEvent[]> {

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Delete, Param, UseGuards } from '@nestjs/common';
 import { GeofenceService } from './geofence.service.js';
 import { JwtAuthGuard } from '@app/auth';
 
@@ -19,6 +19,12 @@ export class GeofenceController {
     @Body('polygon') polygon: any,
   ) {
     return this.geofenceService.createGeofence(name, description, polygon);
+  }
+
+  @Delete(':id')
+  async deleteGeofence(@Param('id') id: string) {
+    await this.geofenceService.deleteGeofence(id);
+    return { success: true };
   }
 
   @Get('events')

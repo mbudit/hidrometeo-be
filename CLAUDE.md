@@ -280,10 +280,10 @@ The ADSBMAS microservice manages real-time ADS-B aircraft data acquisition, trac
 
 #### Key Functional Components
 * **`AdsbIngestionModule`**: Spawns a TCP socket server on port `30105` that parses incoming SBS-1 transponder telemetry lines, extracts aircraft details, and routes them to the tracker.
-* **`TrackingModule`**: Maintains an in-memory active aircraft cache, calculates heading and velocity dynamically (using Haversine/Bearing equations), evicts stale targets (idle > 60s), and flushes batches of flight coordinates to TimescaleDB every 5 seconds.
-* **`GeofenceModule`**: Caches geofence definitions, implements a fast point-in-polygon ray-casting algorithm to test whether an aircraft is inside each geofence on every coordinate change, writes enter/exit crossovers to the `geofence_events` table, and broadcasts alerts.
+* **`TrackingModule`**: Maintains an in-memory active aircraft cache, calculates heading and velocity dynamically (using Haversine/Bearing equations), evicts stale targets (idle > 60s), broadcasts eviction notices (`aircraft-evicted`) via WebSocket, and flushes batches of flight coordinates to TimescaleDB every 5 seconds.
+* **`GeofenceModule`**: Caches geofence definitions, implements a fast point-in-polygon ray-casting algorithm to test whether an aircraft is inside each geofence on every coordinate change, writes enter/exit crossovers to the `geofence_events` table, broadcasts alerts, and handles soft-deletion (`is_active = false`) of geofences to preserve crossover event logs.
 * **`PlaybackModule`**: Performs historical queries against TimescaleDB coordinates filtered by `icao24` and time boundaries.
-* **`GatewayModule`**: Hosts the Socket.IO gateway on port `3005` at the `/ws/aircraft` namespace, pushing real-time position reports (`aircraft-update`) and crossover events (`geofence-alert`).
+* **`GatewayModule`**: Hosts the Socket.IO gateway on port `3005` at the `/ws/aircraft` namespace, pushing real-time position reports (`aircraft-update`), eviction alerts (`aircraft-evicted`), and crossover events (`geofence-alert`).
 
 #### REST API Routes
 
@@ -295,6 +295,7 @@ The ADSBMAS microservice manages real-time ADS-B aircraft data acquisition, trac
 | `GET` | `/aircraft/:icao24/history` | Retrieves historical tracking coordinates for playback | Operator, Admin |
 | `GET` | `/geofences` | Retrieves active geofences | Operator, Admin |
 | `POST` | `/geofences` | Creates a new geofence zone (stores GeoJSON polygon) | Admin |
+| `DELETE` | `/geofences/:id` | Soft-deletes a geofence zone (`is_active = false`) | Admin |
 | `GET` | `/geofences/events` | Retrieves logs of geofence crossing events | Operator, Admin |
 
 ---
