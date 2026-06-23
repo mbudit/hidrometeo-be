@@ -17,6 +17,11 @@ export interface AircraftState {
   squawk?: string;
   distance?: number;
   lastSeen: number;
+  registration?: string;
+  model?: string;
+  type_code?: string;
+  country?: string;
+  country_code?: string;
 }
 
 @Injectable()
@@ -71,6 +76,8 @@ export class TrackingService implements OnModuleInit, OnModuleDestroy {
     if (!state) {
       state = { icao24: cleanIcao, lastSeen: Date.now() };
       this.activeAircraft.set(cleanIcao, state);
+      // Load static metadata (registration, model, country) asynchronously
+      this.loadMetadataForState(cleanIcao);
     }
 
     // Merge properties
@@ -149,6 +156,65 @@ export class TrackingService implements OnModuleInit, OnModuleDestroy {
       metadata: metadata || null,
       live: liveState || null,
     };
+  }
+
+  private async loadMetadataForState(icao24: string) {
+    try {
+      let metadata = await this.aircraftRepo.findOne({ where: { icao24 } });
+      
+      // If not in DB, or missing registration, try to fetch from hexdb.io API
+      if (!metadata || !metadata.registration) {
+        const url = `https://hexdb.io/api/v1/aircraft/${icao24}`;
+        try {
+          const res = await fetch(url);
+          if (res.ok) {
+            const data = await res.json() as any;
+            const apiMetadata = {
+              registration: data.Registration || null,
+              type_code: data.ICAOTypeCode || null,
+              model: data.Type || data.Manufacturer || null,
+            };
+            
+            if (metadata) {
+              metadata.registration = apiMetadata.registration;
+              metadata.type_code = apiMetadata.type_code;
+              metadata.model = apiMetadata.model;
+              await this.aircraftRepo.save(metadata);
+            } else {
+              metadata = this.aircraftRepo.create({
+                icao24,
+                registration: apiMetadata.registration,
+                type_code: apiMetadata.type_code,
+                model: apiMetadata.model,
+                country: 'Unknown',
+                is_military: false,
+              });
+              await this.aircraftRepo.save(metadata);
+            }
+            console.log(`Tracking: Fetched and cached hexdb.io metadata for ${icao24}: ${apiMetadata.registration}`);
+          }
+        } catch (apiErr: any) {
+          console.warn(`Tracking: Failed to fetch hexdb metadata for ${icao24}: ${apiErr.message}`);
+        }
+      }
+
+      // If metadata is resolved, apply it to the active tracking state
+      if (metadata) {
+        const state = this.activeAircraft.get(icao24);
+        if (state) {
+          state.registration = metadata.registration || undefined;
+          state.model = metadata.model || undefined;
+          state.type_code = metadata.type_code || undefined;
+          state.country = metadata.country || undefined;
+          state.country_code = metadata.country_code || undefined;
+          
+          // Re-broadcast the enriched state immediately via WebSocket
+          this.gateway.broadcastAircraft(state);
+        }
+      }
+    } catch (err) {
+      console.error(`Tracking: Failed loading metadata for ${icao24}:`, err);
+    }
   }
 
   private async flushTrackBuffer() {
