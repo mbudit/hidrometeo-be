@@ -52,6 +52,7 @@ export class GeofenceService implements OnModuleInit {
 
   async getEvents(): Promise<GeofenceEvent[]> {
     return this.eventRepo.find({
+      relations: ['geofence'],
       order: { occurred_at: 'DESC' },
       take: 100,
     });

@@ -250,15 +250,25 @@ export class TrackingService implements OnModuleInit, OnModuleDestroy {
         }
       }
 
-      // 2. Batch insert coordinates into TimeSeries hypertable
+      // 2. Deduplicate tracks in the batch to avoid ON CONFLICT DO UPDATE constraint errors.
+      // Postgres does not allow the same row to be updated/affected multiple times in a single INSERT statement.
+      const uniqueTracks = new Map<string, any>();
+      for (const track of batch) {
+        // Use icao24 and timestamp in milliseconds as the unique key
+        const key = `${track.icao24}_${track.time.getTime()}`;
+        uniqueTracks.set(key, track);
+      }
+      const deduplicatedBatch = Array.from(uniqueTracks.values());
+
+      // 3. Batch insert coordinates into TimeSeries hypertable
       await this.trackRepo
         .createQueryBuilder()
         .insert()
-        .values(batch)
+        .values(deduplicatedBatch)
         .onConflict('("time", "icao24") DO UPDATE SET callsign = EXCLUDED.callsign, lat = EXCLUDED.lat, lng = EXCLUDED.lng, altitude = EXCLUDED.altitude, velocity = EXCLUDED.velocity, heading = EXCLUDED.heading')
         .execute();
 
-      console.log(`Flushed ${batch.length} tracks into database.`);
+      console.log(`Flushed ${deduplicatedBatch.length} tracks into database (deduplicated from ${batch.length}).`);
     } catch (err) {
       console.error('Failed to flush ADSB tracks to database:', err);
     }
@@ -309,5 +319,30 @@ export class TrackingService implements OnModuleInit, OnModuleDestroy {
 
     const brng = (Math.atan2(y, x) * 180) / Math.PI;
     return (brng + 360) % 360;
+  }
+
+  async getMilitaryCivilSplit(): Promise<{ isMilitary: boolean; count: number }[]> {
+    const data = await this.aircraftRepo.createQueryBuilder('ac')
+      .select('ac.is_military', 'isMilitary')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('ac.is_military')
+      .getRawMany();
+    
+    return data.map((item) => ({
+      isMilitary: !!item.isMilitary,
+      count: parseInt(item.count, 10),
+    }));
+  }
+
+  async getRecentEmergencySquawks(): Promise<AircraftTrack[]> {
+    return this.trackRepo.find({
+      where: [
+        { squawk: '7700' },
+        { squawk: '7600' },
+        { squawk: '7500' }
+      ],
+      order: { time: 'DESC' },
+      take: 10,
+    });
   }
 }

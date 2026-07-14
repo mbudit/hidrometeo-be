@@ -16,6 +16,16 @@ export class AircraftController {
     return this.trackingService.getActiveAircraft();
   }
 
+  @Get('stats/military-civil')
+  async getMilitaryCivilSplit() {
+    return this.trackingService.getMilitaryCivilSplit();
+  }
+
+  @Get('stats/emergency-squawks')
+  async getRecentEmergencySquawks() {
+    return this.trackingService.getRecentEmergencySquawks();
+  }
+
   @Get(':icao24')
   async getAircraftDetails(@Param('icao24') icao24: string) {
     return this.trackingService.getAircraftDetails(icao24);
